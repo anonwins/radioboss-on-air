@@ -30,7 +30,7 @@ TurnOffOnError = (args.turn_off_on_error=='yes')
 
 # minimize window if requested
 if (args.start_minimized=='yes'):
-    ctypes.windll.user32.ShowWindow( ctypes.windll.kernel32.GetConsoleWindow(),6)
+    ctypes.windll.user32.ShowWindow(ctypes.windll.kernel32.GetConsoleWindow(),6)
 
 ########################################################################
 # FUNCTIONS                                                            #
