@@ -1,0 +1,6 @@
+Version: 0.0.0.3
+CompanyName: anonwins
+FileDescription: Lights a light through parallel port, whenever Radioboss is using the microphone.
+LegalCopyright: Free and Open Source
+ProductName: radioboss-on-air
+
