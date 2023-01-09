@@ -21,12 +21,11 @@ parser.add_argument('--port',default=888,type=int,help="The LPT port address. (d
 parser.add_argument('--on-value',default=255,type=int,help="The LPT value for ON. (default: 255)")
 parser.add_argument('--off-value',default=0,type=int,help="The LPT value for OFF. (default: 0)")
 parser.add_argument('--interval',default=1,type=float,help="Number of seconds between each check. (default: 1)")
-parser.add_argument('--initial-state',default="off",choices=['on','off'],help="Forces this state on load. (default: off)")
-parser.add_argument('--turn-off-on-error',default="no",choices=['yes','no'],help="Turn light off in case of status reading error. (default: yes)")
+parser.add_argument('--initial-state',default="off",choices=['on','off'],help="Force this state on load. (default: off)")
+parser.add_argument('--turn-off-on-error',default="yes",choices=['yes','no'],help="Turn light off in case of status reading error. (default: yes)")
+parser.add_argument('--turn-off-on-exit',default="yes",choices=['yes','no'],help="Turn off the light before exiting. (default: yes)")
 parser.add_argument('--start-minimized',default="no",choices=['yes','no'],help="Automatically minimize the window when the script loads. (default: no)")
 args = parser.parse_args()
-
-TurnOffOnError = (args.turn_off_on_error=='yes')
 
 # minimize window if requested
 if (args.start_minimized=='yes'):
@@ -71,15 +70,23 @@ def is_radioboss_using_the_mic(rb_path):      # Returns True/False if Radioboss 
     # check last used time
     return res_line.endswith('0x0')
 
+def exit_gracefully():                        # Exits without KeyboardInterrupt, and sets final light state.
+    if (args.turn_off_on_exit=='yes'):
+        print('Setting final state: off')
+        toggle_light('off')
+    sys.exit(0)
+
 ########################################################################
 # MAIN PROGRAM                                                         #
 ########################################################################
 
-# allow a silent exit
-signal.signal(signal.SIGINT, lambda x, y: sys.exit(0))
+# REGISTER A GRACEFUL EXIT
+signal.signal(signal.SIGINT, lambda x, y: exit_gracefully())
 
+# EXIT IF RADIOBOSS.EXE CANNOT BE FOUND
 if (not exists(args.rb_path)):
     print('Radioboss executable not found. Specify with --rb-path. See -h for help.')
+    sys.exit(0)
 
 # INITIALIZE PROGRAM WINDOW
 software_title = 'radioboss-on-air'
@@ -110,14 +117,16 @@ while True:
 
     else:                                        # ERROR
         if (not failed):
-            print('Could not locate registry value. Is Radioboss installed?')
+            print('Could not locate registry value. You must use mic with Radioboss at least once.')
             failed = True
-            if (TurnOffOnError): toggle_light('off')
+            if (args.turn_off_on_error=='yes'): toggle_light('off')
 
     # CHANGE THE STATE IF NEEDED
     if (new_state):
+        if (failed):
+            print('Radioboss registry located.')
+            failed = False
         print('Changing state: '+new_state)
         toggle_light(new_state)
-        if (failed): failed = False
 
     time.sleep(args.interval)
