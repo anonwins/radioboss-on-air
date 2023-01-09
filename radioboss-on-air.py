@@ -17,14 +17,15 @@ from os.path import exists
 # parse arguments
 parser = argparse.ArgumentParser()
 parser.add_argument('--rb-path',default="C:\\Program Files\\RadioBoss\\Radioboss.exe",help="Full path to radioboss.exe (default: C:\\Program Files\\RadioBoss\\Radioboss.exe)")
-parser.add_argument('--port',default=888,type=int,help="The LPT port address. (default: 888)")
-parser.add_argument('--on-value',default=255,type=int,help="The LPT value for ON. (default: 255)")
-parser.add_argument('--off-value',default=0,type=int,help="The LPT value for OFF. (default: 0)")
+parser.add_argument('--port',default=888,type=int,help="The LPT port address. (default: 888) (not used when --hardware-instance is provided)")
+parser.add_argument('--on-value',default=255,type=int,help="The LPT value for ON. (default: 255) (not used when --hardware-instance is provided)")
+parser.add_argument('--off-value',default=0,type=int,help="The LPT value for OFF. (default: 0) (not used when --hardware-instance is provided)")
 parser.add_argument('--interval',default=1,type=float,help="Number of seconds between each check. (default: 1)")
 parser.add_argument('--initial-state',default="off",choices=['on','off'],help="Force this state on load. (default: off)")
 parser.add_argument('--turn-off-on-error',default="yes",choices=['yes','no'],help="Turn light off in case of status reading error. (default: yes)")
 parser.add_argument('--turn-off-on-exit',default="yes",choices=['yes','no'],help="Turn off the light before exiting. (default: yes)")
 parser.add_argument('--start-minimized',default="no",choices=['yes','no'],help="Automatically minimize the window when the script loads. (default: no)")
+parser.add_argument('--hardware-id',default="",help="If you provide that, port and values won't be used.")
 args = parser.parse_args()
 
 # minimize window if requested
@@ -47,11 +48,16 @@ def toggle_light(state):                       # Turns the light on/off
     if (state=='on'): 
         code = args.on_value
         light_status = True
+        command = '/enable-device'
     elif (state=='off'):
         code = args.off_value
         light_status = False
+        command = '/disable-device'
     else: return
-    inpout.DlPortWritePortUchar(args.port,code)
+    if (args.hardware_instance==""):
+        inpout.DlPortWritePortUchar(args.port,code)
+    else:
+        result = subprocess.run(['pnputil',command,args.hardware_instance],capture_output=True)
 
 def is_radioboss_using_the_mic(rb_path):      # Returns True/False if Radioboss is using the mic (string on error).
     # get reg entry value
