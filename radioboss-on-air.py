@@ -23,9 +23,14 @@ parser.add_argument('--off-value',default=0,type=int,help="The LPT value for OFF
 parser.add_argument('--interval',default=1,type=float,help="Number of seconds between each check. (default: 1)")
 parser.add_argument('--initial-state',default="off",choices=['on','off'],help="Forces this state on load. (default: off)")
 parser.add_argument('--turn-off-on-error',default="no",choices=['yes','no'],help="Turn light off in case of status reading error. (default: yes)")
+parser.add_argument('--start-minimized',default="no",choices=['yes','no'],help="Automatically minimize the window when the script loads. (default: no)")
 args = parser.parse_args()
 
 TurnOffOnError = (args.turn_off_on_error=='yes')
+
+# minimize window if requested
+if (args.start_minimized=='yes'):
+    ctypes.windll.user32.ShowWindow( ctypes.windll.kernel32.GetConsoleWindow(),6)
 
 ########################################################################
 # FUNCTIONS                                                            #
@@ -57,8 +62,8 @@ def is_radioboss_using_the_mic(rb_path):      # Returns True/False if Radioboss 
     # check for error
     res_error = result.stderr.decode('utf-8')
     if (res_error): return res_error
-    res_out = result.stdout.decode('utf-8')
     # find result line
+    res_out = result.stdout.decode('utf-8')
     res_line = False
     for line in res_out.split("\n"):
         if "REG_QWORD" in line:
