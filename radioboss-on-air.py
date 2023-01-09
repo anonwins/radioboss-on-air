@@ -37,15 +37,15 @@ def __DllFunc(name, ret, args):               # Loads a DLL
     func.argtype = args
     return func
 
-sign_status = False
-def toggle_sign(state):                       # Turns the sign on/off
-    global sign_status
+light_status = False
+def toggle_light(state):                       # Turns the light on/off
+    global light_status
     if (state=='on'): 
         code = args.on_value
-        sign_status = True
+        light_status = True
     elif (state=='off'):
         code = args.off_value
-        sign_status = False
+        light_status = False
     else: return
     inpout.DlPortWritePortUchar(args.port,code)
 
@@ -87,7 +87,7 @@ DlPortWritePortUchar = __DllFunc("DlPortWritePortUchar", ctypes.c_void_p, (ctype
 
 # ENFORCE INITIAL STATE
 print('Setting initial state: '+args.initial_state)
-toggle_sign(args.initial_state)
+toggle_light(args.initial_state)
 
 # START THE LOOP
 failed = False
@@ -98,21 +98,21 @@ while True:
     rb_status = is_radioboss_using_the_mic(args.rb_path)
 
     if (rb_status==True):                        # ON AIR
-        if (not sign_status): new_state = 'on'
+        if (not light_status): new_state = 'on'
 
     elif (rb_status==False):                     # OFF AIR
-        if (sign_status): new_state = 'off'
+        if (light_status): new_state = 'off'
 
     else:                                        # ERROR
         if (not failed):
             print('Could not locate registry value. Is Radioboss installed?')
             failed = True
-            if (TurnOffOnError): toggle_sign('off')
+            if (TurnOffOnError): toggle_light('off')
 
     # CHANGE THE STATE IF NEEDED
     if (new_state):
         print('Changing state: '+new_state)
-        toggle_sign(new_state)
+        toggle_light(new_state)
         if (failed): failed = False
 
     time.sleep(args.interval)
