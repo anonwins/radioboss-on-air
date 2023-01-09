@@ -7,21 +7,25 @@
 #                                                                      #
 ########################################################################
 
-import ctypes, sys, subprocess, os, time
+import ctypes, sys, subprocess, os, time, argparse, signal
+from os.path import exists
 
 ########################################################################
 # CONFIG                                                               #
 ########################################################################
 
-RadiobossPath  = "C:\\RadioBoss-6.2.1-Portable\\radioboss.exe"
+# parse arguments
+parser = argparse.ArgumentParser()
+parser.add_argument('--rb-path',default="C:\\Program Files\\RadioBoss\\Radioboss.exe",help="Full path to radioboss.exe (default: C:\\Program Files\\RadioBoss\\Radioboss.exe)")
+parser.add_argument('--port',default=888,type=int,help="The LPT port address. (default: 888)")
+parser.add_argument('--on-value',default=255,type=int,help="The LPT value for ON. (default: 255)")
+parser.add_argument('--off-value',default=0,type=int,help="The LPT value for OFF. (default: 0)")
+parser.add_argument('--interval',default=1,type=float,help="Number of seconds between each check. (default: 1)")
+parser.add_argument('--initial-state',default="off",choices=['on','off'],help="Forces this state on load. (default: off)")
+parser.add_argument('--turn-off-on-error',default="no",choices=['yes','no'],help="Turn light off in case of status reading error. (default: yes)")
+args = parser.parse_args()
 
-ComPort        = 888
-OnValue        = 4
-OffValue       = 0
-
-CheckInterval  = 1      # in seconds
-InitialState   = 'off'
-TurnOffOnError = True
+TurnOffOnError = (args.turn_off_on_error=='yes')
 
 ########################################################################
 # FUNCTIONS                                                            #
@@ -37,13 +41,13 @@ sign_status = False
 def toggle_sign(state):                       # Turns the sign on/off
     global sign_status
     if (state=='on'): 
-        code = OnValue
+        code = args.on_value
         sign_status = True
     elif (state=='off'):
-        code = OffValue
+        code = args.off_value
         sign_status = False
     else: return
-    inpout.DlPortWritePortUchar(ComPort,code)
+    inpout.DlPortWritePortUchar(args.port,code)
 
 def is_radioboss_using_the_mic(rb_path):      # Returns True/False if Radioboss is using the mic (string on error).
     # get reg entry value
@@ -66,10 +70,15 @@ def is_radioboss_using_the_mic(rb_path):      # Returns True/False if Radioboss 
 # MAIN PROGRAM                                                         #
 ########################################################################
 
+# allow a silent exit
+signal.signal(signal.SIGINT, lambda x, y: sys.exit(0))
+
+if (not exists(args.rb_path)):
+    print('Radioboss executable not found. Specify with --rb-path. See -h for help.')
+
 # INITIALIZE PROGRAM WINDOW
 software_title = 'radioboss-on-air'
 ctypes.windll.kernel32.SetConsoleTitleW(software_title)
-print(software_title+'\r\n')
 
 # LOAD INPOUT32.DLL
 script_dir = os.path.dirname(os.path.realpath(__file__))
@@ -77,8 +86,8 @@ inpout = ctypes.WinDLL(script_dir+"\\inpoutx64.dll")
 DlPortWritePortUchar = __DllFunc("DlPortWritePortUchar", ctypes.c_void_p, (ctypes.c_ushort, ctypes.c_ubyte))
 
 # ENFORCE INITIAL STATE
-print('Setting initial state: '+InitialState)
-toggle_sign(InitialState)
+print('Setting initial state: '+args.initial_state)
+toggle_sign(args.initial_state)
 
 # START THE LOOP
 failed = False
@@ -86,7 +95,7 @@ while True:
 
     # GET RADIOBOSS MIC STATUS
     new_state = False
-    rb_status = is_radioboss_using_the_mic(RadiobossPath)
+    rb_status = is_radioboss_using_the_mic(args.rb_path)
 
     if (rb_status==True):                        # ON AIR
         if (not sign_status): new_state = 'on'
@@ -96,7 +105,7 @@ while True:
 
     else:                                        # ERROR
         if (not failed):
-            print('Could not locate registry value. Is Radioboss installed and running?')
+            print('Could not locate registry value. Is Radioboss installed?')
             failed = True
             if (TurnOffOnError): toggle_sign('off')
 
@@ -106,4 +115,4 @@ while True:
         toggle_sign(new_state)
         if (failed): failed = False
 
-    time.sleep(CheckInterval)
+    time.sleep(args.interval)

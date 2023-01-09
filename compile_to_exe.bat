@@ -6,4 +6,4 @@ cd /D "%~dp0"
 
 create-version-file version.yml --outfile version.txt
 
-pyinstaller --onefile -i "on-air.ico" --add-binary "inpoutx64.dll;." "radioboss-on-air.py" --version-file "version.txt"
+pyinstaller --onefile -i "on-air.ico" --add-binary "inpoutx64.dll;." --version-file "version.txt" "radioboss-on-air.py"
