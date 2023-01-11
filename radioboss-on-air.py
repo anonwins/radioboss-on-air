@@ -89,7 +89,7 @@ def exit_gracefully():                        # Exits without KeyboardInterrupt,
 # REGISTER A GRACEFUL EXIT
 signal.signal(signal.SIGINT, lambda x, y: exit_gracefully())
 
-# EXIT IF RADIOBOSS.EXE CANNOT BE FOUND
+# EXIT IF RADIOBOSS.EXE CANNOT BE  FOUND
 if (not exists(args.rb_path)):
     print('Radioboss executable not found. Specify with --rb-path. See -h for help.')
     sys.exit(0)
